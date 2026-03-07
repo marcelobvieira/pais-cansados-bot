@@ -1,6 +1,6 @@
-const bot = require('../lib/bot');
+import bot from '../lib/bot.js';
 
-module.exports = async (req, res) => {
+export default async function (req, res) {
   try {
     if (req.method === 'POST') {
       // Passa a requisição (o envio do Telegram) para o Telegraf processar
