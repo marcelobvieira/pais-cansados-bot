@@ -20,6 +20,7 @@
   "homepage": "https://github.com/marcelobvieira/pais-cansados-bot#readme",
   "dependencies": {
     "dotenv": "^17.3.1",
+    "google-auth-library": "^10.6.1",
     "google-spreadsheet": "^5.2.0",
     "telegraf": "^4.16.3"
   }
