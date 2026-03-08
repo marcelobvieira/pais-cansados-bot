@@ -14,6 +14,10 @@ Um bot do Telegram simples e eficiente construído com Node.js (rodando on-deman
 - **[Google Spreadsheet](https://theoephraim.github.io/node-google-spreadsheet)** e lib nativa **[Google Auth Library](https://github.com/googleapis/google-auth-library-nodejs)** para comunicação validada via JWT com o Google Sheets API.
 - **[Vercel](https://vercel.com/)** para Deploy em produção gratuito com HTTPS nativo garantido (requisito do Webhook do Telegram).
 
+## Segurança 🔒
+- **Filtro de Acesso (Allowed Users):** Um middleware global garante que o bot não responda a estranhos da internet, restringindo o uso somente aos IDs do Telegram predefinidos no arquivo `.env`.
+- **Webhook Securitizado:** A rota da Vercel foi configurada para não processar requisições "falsas" (que não venham do Telegram), exigindo um token secreto (`WEBHOOK_SECRET`) na URL chamada pelo Telegram.
+
 ## Estrutura da Planilha Requerida
 O arquivo Google Sheets referenciado precisará ter **duas abas criadas com exatamente estes nomes**:
 1. `Filmes`
@@ -41,6 +45,8 @@ O arquivo Google Sheets referenciado precisará ter **duas abas criadas com exat
    - `GOOGLE_SHEETS_DOCUMENT_ID`: O ID do documento na URL do Google Sheets.
    - `GOOGLE_SERVICE_ACCOUNT_EMAIL`: O e-mail da sua conta de serviço GCP.
    - `GOOGLE_PRIVATE_KEY`: A chave privada inteira.
+   - `ALLOWED_USERS`: Lista de IDs do Telegram (separados por vírgula) que podem usar o bot (Ex: `1234567,9876543`).
+   - `WEBHOOK_SECRET`: Uma senha forte qualquer (Ex: `uma_senha_muito_louca`) que será passada na URL do Webhook do Telegram.
 3. Para testar modificações no script ou realizar debugs visuais, recomenda-se a utilização do ambiente dev da Vercel.
    ```bash
    vercel dev
@@ -56,7 +62,7 @@ Para subir o bot em Cloud gratuitamente siga os passos de configuração do Webh
 2. Acesse o [Painel da Vercel](https://vercel.com), vá até seu projeto > **Settings > Environment Variables** e cadastre as 4 chaves citadas anteriormente. Tendo inserido as chaves, faça um **Redeploy** para o cache ser reconstruído e injetar essas variáveis na nuvem.
 3. Configure o Webhook do Telegram rodando a seguinte URL de registro no seu navegador:
    ```
-   https://api.telegram.org/bot<SEU_TOKEN_TELEGRAM_AQUI>/setWebhook?url=https://<SUA_URL_FINAL_DA_VERCEL>/api/webhook
+   https://api.telegram.org/bot<SEU_TOKEN_TELEGRAM_AQUI>/setWebhook?url=https://<SUA_URL_FINAL_DA_VERCEL>/api/webhook?webhook_secret=<SUA_SENHA_AQUI>
    ```
    O envio estará completo quando o navegador exibir `Webhook was set`.
 
