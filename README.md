@@ -18,6 +18,9 @@ Um bot do Telegram simples e eficiente construído com Node.js (rodando on-deman
 - **Filtro de Acesso (Allowed Users):** Um middleware global garante que o bot não responda a estranhos da internet, restringindo o uso somente aos IDs do Telegram predefinidos no arquivo `.env`.
 - **Webhook Securitizado:** A rota da Vercel foi configurada para não processar requisições "falsas" (que não venham do Telegram), exigindo um token secreto (`WEBHOOK_SECRET`) na URL chamada pelo Telegram.
 
+## Arquitetura - diagrama de sequência macro
+<img width="8192" height="4069" alt="mermaid-ai-diagram-2026-03-08-022341" src="https://github.com/user-attachments/assets/955a45f5-b589-4329-9e8b-048494437674" />
+
 ## Estrutura da Planilha Requerida
 O arquivo Google Sheets referenciado precisará ter **duas abas criadas com exatamente estes nomes**:
 1. `Filmes`
