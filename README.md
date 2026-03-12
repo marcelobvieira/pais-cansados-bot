@@ -37,6 +37,20 @@ O arquivo Google Sheets referenciado precisará ter **duas abas criadas com exat
 - Onde vimos
 - Mês
 
+## Integração com TMDB 🎥
+
+Para facilitar o preenchimento dos dados, o bot conta com uma integração opcional à API pública do [TMDB (The Movie Database)](https://www.themoviedb.org/documentation/api).
+
+Assim que o usuário informa o título de um filme ou série o bot tenta buscar registros correspondentes no TMDB e, quando encontra, pré‑preenche automaticamente o *país de origem* e o *ano de lançamento*. Caso haja vários resultados, uma lista de opções é apresentada para escolha; se nada for encontrado ou ocorrer algum erro, a pergunta passa a ser feita manualmente.
+
+Para ativar essa funcionalidade é necessário adicionar também a chave de API do TMDB às variáveis de ambiente (você pode obter uma em https://www.themoviedb.org/settings/api):
+
+```bash
+TMDB_API_KEY=chave_do_tmdb_aqui
+```
+
+> **Nota:** o bot continuará funcionando mesmo sem a variável `TMDB_API_KEY`, mas exigirá que país e lançamento sempre sejam informados pelo usuário.
+
 ## Configuração do Ambiente Local (Desenvolvimento)
 
 1. Clone o repositório e instale as dependências:
@@ -49,6 +63,7 @@ O arquivo Google Sheets referenciado precisará ter **duas abas criadas com exat
    - `GOOGLE_SERVICE_ACCOUNT_EMAIL`: O e-mail da sua conta de serviço GCP.
    - `GOOGLE_PRIVATE_KEY`: A chave privada inteira.
    - `ALLOWED_USERS`: Lista de IDs do Telegram (separados por vírgula) que podem usar o bot (Ex: `1234567,9876543`).
+   - `TMDB_API_KEY`: Chave de API do TMDB (opcional, usada para auto‑preenchimento de origem/ano).
    - `WEBHOOK_SECRET`: Uma senha forte qualquer (Ex: `uma_senha_muito_louca`) que será passada na URL do Webhook do Telegram.
 3. Para testar modificações no script ou realizar debugs visuais, recomenda-se a utilização do ambiente dev da Vercel.
    ```bash
