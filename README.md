@@ -19,7 +19,50 @@ Um bot do Telegram simples e eficiente construído com Node.js (rodando on-deman
 - **Webhook Securitizado:** A rota da Vercel foi configurada para não processar requisições "falsas" (que não venham do Telegram), exigindo um token secreto (`WEBHOOK_SECRET`) na URL chamada pelo Telegram.
 
 ## Arquitetura - diagrama de sequência macro
-<img width="8192" height="4069" alt="mermaid-ai-diagram-2026-03-08-022341" src="https://github.com/user-attachments/assets/955a45f5-b589-4329-9e8b-048494437674" />
+
+```mermaid
+sequenceDiagram
+    autonumber
+    actor U as Usuário (Telegram)
+    participant T as Telegram API
+    participant V as Webhook (Vercel)
+    participant M as Middleware de Segurança
+    participant B as Telegraf (Bot Wizard)
+    participant TM as API TMDB
+    participant G as Google Auth (JWT)
+    participant S as Google Sheets
+
+    %% Fluxo principal
+    U->>T: Envia mensagem ao bot
+    T->>V: Repassa via webhook<br/>(WEBHOOK_SECRET incluído)
+    V->>M: Valida segredo do webhook
+    alt Segredo inválido
+        M-->>T: Rejeita requisição<br/>(403 Unauthorized)
+    else Segredo válido
+        M->>B: Verifica ALLOWED_USERS
+        alt Usuário não autorizado
+            B-->>U: Acesso negado ⚠️
+        else Usuário autorizado
+            B->>U: Solicita título do filme/série
+            U-->>B: Envia título
+            B->>TM: Consulta API TMDB<br/>(buscar dados do título)
+            alt Resultado encontrado
+                TM-->>B: Retorna país e ano<br/>e possíveis correspondências
+                B->>U: Apresenta lista de opções<br/>(usuário escolhe)
+                U-->>B: Escolha confirmada
+                B->>B: Pré‑preenche dados com país e ano
+            else Nenhum resultado / erro
+                TM-->>B: Retorna falha
+                B->>U: Pergunta país e ano manualmente
+            end
+            B->>G: Autentica via JWT<br/>(Conta de serviço Google)
+            G->>S: Grava dados (Filmes/Séries)
+            S-->>G: Confirma gravação
+            G-->>B: Retorna sucesso
+            B-->>U: Confirma registro concluído ✅
+        end
+    end
+```
 
 ## Estrutura da Planilha Requerida
 O arquivo Google Sheets referenciado precisará ter **duas abas criadas com exatamente estes nomes**:
