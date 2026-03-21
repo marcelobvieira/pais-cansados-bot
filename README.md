@@ -4,6 +4,7 @@ Um bot do Telegram simples e eficiente construído com Node.js (rodando on-deman
 
 ## Funcionalidades
 - **Fluxo de Conversação Interativo (Wizard):** O bot guia o usuário fazendo uma pergunta de cada vez (Nome, Origem, Nota, Lançamento, Onde viram, etc).
+- **Entrada Inteligente com IA:** Na etapa do título o usuário pode digitar o nome, enviar uma foto da capa/poster ou mandar um áudio falando o nome. O bot interpreta a mídia, sugere o título e pede confirmação antes de consultar o TMDB.
 - **Separação Inteligente:** Lida com a entrada de "Filmes" e "Séries" de formas diferentes, direcionando os dados para abas distintas no Google Sheets e fazendo perguntas específicas (como temporara para Séries).
 - **Arquitetura _Stateless_ e Serverless:** Configurado como um Webhook da Vercel (`api/webhook.js`). O bot "acorda" apenas quando recebe uma mensagem, garantindo **custo zero** de hospedagem e alta performance.
 - **Tratamento Robusto de Chaves:** Implementado com um *parser* customizado que lida muito bem com quebras de linha e strings JSON formatadas da chave privada do Google Cloud, algo que costuma ser um pesadelo em painéis como o da Vercel.
@@ -44,7 +45,17 @@ sequenceDiagram
             B-->>U: Acesso negado ⚠️
         else Usuário autorizado
             B->>U: Solicita título do filme/série
-            U-->>B: Envia título
+            alt Texto
+                U-->>B: Envia título
+            else Imagem
+                U-->>B: Envia capa/poster
+                B->>B: Usa IA para identificar título
+            else Áudio
+                U-->>B: Envia áudio com o nome
+                B->>B: Usa IA para transcrever título
+            end
+            B->>U: Pede confirmação do título inferido
+            U-->>B: Confirma ou corrige
             B->>TM: Consulta API TMDB<br/>(buscar dados do título)
             alt Resultado encontrado
                 TM-->>B: Retorna país e ano<br/>e possíveis correspondências
@@ -84,15 +95,34 @@ O arquivo Google Sheets referenciado precisará ter **duas abas criadas com exat
 
 Para facilitar o preenchimento dos dados, o bot conta com uma integração opcional à API pública do [TMDB (The Movie Database)](https://www.themoviedb.org/documentation/api).
 
-Assim que o usuário informa o título de um filme ou série o bot tenta buscar registros correspondentes no TMDB e, quando encontra, pré‑preenche automaticamente o *país de origem* e o *ano de lançamento*. Caso haja vários resultados, uma lista de opções é apresentada para escolha; se nada for encontrado ou ocorrer algum erro, a pergunta passa a ser feita manualmente.
+Assim que o usuário informa o título de um filme ou série, ou envia uma imagem/áudio para a camada de IA inferir esse título, o bot tenta buscar registros correspondentes no TMDB e, quando encontra, pré‑preenche automaticamente o *país de origem* e o *ano de lançamento*. Antes da busca, o título inferido é sempre mostrado para confirmação. Caso haja vários resultados, uma lista de opções é apresentada para escolha; se nada for encontrado ou ocorrer algum erro, a pergunta passa a ser feita manualmente.
 
-Para ativar essa funcionalidade é necessário adicionar também a chave de API do TMDB às variáveis de ambiente (você pode obter uma em https://www.themoviedb.org/settings/api):
+Para ativar essa funcionalidade é necessário adicionar a chave de API do TMDB às variáveis de ambiente (você pode obter uma em https://www.themoviedb.org/settings/api):
 
 ```bash
 TMDB_API_KEY=chave_do_tmdb_aqui
 ```
 
 > **Nota:** o bot continuará funcionando mesmo sem a variável `TMDB_API_KEY`, mas exigirá que país e lançamento sempre sejam informados pelo usuário.
+
+## Camada de IA para imagem e áudio
+
+Na etapa do título o bot aceita:
+- `texto`: usa o valor diretamente
+- `foto`: tenta identificar o nome do filme/série pela capa ou poster
+- `voice` ou `audio`: transcreve o nome falado
+
+Quando a IA não consegue identificar um título com confiança suficiente, o bot volta para o caminho manual e pede que o nome seja digitado.
+
+Para ativar essa funcionalidade, configure também:
+
+```bash
+OPENAI_API_KEY=sua_chave_openai
+OPENAI_MODEL_IMAGE=gpt-4.1-mini
+OPENAI_MODEL_AUDIO=gpt-4o-mini-transcribe
+```
+
+> `OPENAI_MODEL_IMAGE` e `OPENAI_MODEL_AUDIO` são opcionais. Se não forem definidos, o projeto usa os modelos acima por padrão.
 
 ## Configuração do Ambiente Local (Desenvolvimento)
 
@@ -107,6 +137,9 @@ TMDB_API_KEY=chave_do_tmdb_aqui
    - `GOOGLE_PRIVATE_KEY`: A chave privada inteira.
    - `ALLOWED_USERS`: Lista de IDs do Telegram (separados por vírgula) que podem usar o bot (Ex: `1234567,9876543`).
    - `TMDB_API_KEY`: Chave de API do TMDB (opcional, usada para auto‑preenchimento de origem/ano).
+   - `OPENAI_API_KEY`: Chave de API da OpenAI (opcional, usada para reconhecer capa/poster e transcrever áudio).
+   - `OPENAI_MODEL_IMAGE`: Modelo multimodal da OpenAI para interpretação de imagem (opcional).
+   - `OPENAI_MODEL_AUDIO`: Modelo da OpenAI para transcrição de áudio (opcional).
    - `WEBHOOK_SECRET`: Uma senha forte qualquer (Ex: `uma_senha_muito_louca`) que será passada na URL do Webhook do Telegram.
 3. Para testar modificações no script ou realizar debugs visuais, recomenda-se a utilização do ambiente dev da Vercel.
    ```bash
@@ -120,7 +153,7 @@ Para subir o bot em Cloud gratuitamente siga os passos de configuração do Webh
    ```bash
    vercel --prod
    ```
-2. Acesse o [Painel da Vercel](https://vercel.com), vá até seu projeto > **Settings > Environment Variables** e cadastre as 4 chaves citadas anteriormente. Tendo inserido as chaves, faça um **Redeploy** para o cache ser reconstruído e injetar essas variáveis na nuvem.
+2. Acesse o [Painel da Vercel](https://vercel.com), vá até seu projeto > **Settings > Environment Variables** e cadastre todas as chaves usadas pelo projeto. Tendo inserido essas variáveis, faça um **Redeploy** para o cache ser reconstruído e injetá-las na nuvem.
 3. Configure o Webhook do Telegram rodando a seguinte URL de registro no seu navegador:
    ```
    https://api.telegram.org/bot<SEU_TOKEN_TELEGRAM_AQUI>/setWebhook?url=https://<SUA_URL_FINAL_DA_VERCEL>/api/webhook?webhook_secret=<SUA_SENHA_AQUI>
